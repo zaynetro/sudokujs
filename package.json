@@ -1,0 +1,14 @@
+{
+  "name": "Sudoku",
+  "version": "0.0.1",
+  "description": "Simple sudoku game solver",
+  "main": "index.html",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jasmine-node tests/sudoku_test.spec.js"
+  },
+  "author": "Roman Zaynetdinov",
+  "license": "MIT"
+}
