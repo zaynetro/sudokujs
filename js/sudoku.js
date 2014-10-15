@@ -138,17 +138,35 @@ Sudoku.prototype.parseGrid = function (grid) {
   var key;
   var gridValues = this.gridValues(grid);
   var props = Object.getOwnPropertyNames(gridValues);
+  var d;
   var s;
 
+  /*
   for(i in this.squares) {
     s = this.squares[i];
-    /*values[s] = /[0.]/.test(gridValues[s]) ? this.digits : gridValues[s];*/
-    values[s] = this.digits;
+    values[s] = /[0.]/.test(gridValues[s]) ? this.digits : gridValues[s];
   }
 
-  props.forEach(function (key) {
-    if(this.digits.indexOf(gridValues[key]) !== -1 && !this.assign(values, key, gridValues[key])) return false;
+  this.squares.forEach(function (square) {
+    if(values[square].length === 1) {
+      this.eliminate(values, square, '');
+    }
   }.bind(this));
+  */
+
+  /**
+   * To start, every square can be any digit; then assign values from the grid.
+   */
+  for(i in this.squares) {
+    values[this.squares[i]] = this.digits;
+  }
+
+  for(i in props) {
+    s = props[i];
+    d = gridValues[s];
+
+    if(this.digits.indexOf(d) !== -1 && !this.assign(values, s, d)) return false;
+  }
 
   return values;
 };
@@ -169,97 +187,121 @@ Sudoku.prototype.gridValues = function (grid) {
   return obj;
 };
 
-Sudoku.prototype.assign = function (values, s, d) {
-  console.log(arguments);
-  var other_values = values[s].replace(d, '');
-  var flag = true;
-  var d2;
 
-  for(d2 in other_values) {
-    flag = !!this.eliminate(values, s, other_values[d2]);
+Sudoku.prototype.assign = function (values, square, remove) {
+  /**
+   * Eliminate all the other values (except d) from values[s] and propagate.
+   * Return values, except return False if a contradiction is detected.
+   */
+  var other_values = values[square].replace(remove, '');
+  var flag = true;
+  var i;
+
+  for(i in other_values) {
+    flag = !!this.eliminate(values, square, other_values[i]);
     if(!flag) return false;
   }
 
   return values;
 };
 
-Sudoku.prototype.eliminate = function (values, s, d) {
-  var d2;
-  var s2;
+/**
+ * Eliminate from peers
+ */
+Sudoku.prototype.eliminate = function (values, square, remove) {
+  var v;
+  var key;
   var flag = true;
   var u;
-  var dplaces = [];
+  var dplaces;
 
-  if(values[s].indexOf(d) === -1) return values;
-  values[s] = values[s].replace(d, '');
+  if(values[square].indexOf(remove) === -1) return values;
+  values[square] = values[square].replace(remove, '');
 
-  // (1) If a square s is reduced to one value d2, then eliminate d2 from the peers.
-  if(values[s].length === 0) return false; // Contradiction: all values were removed
-  else if(values[s].length === 1) {
-    d2 = values[s];
-    for(s2 in this.peers[s]) {
-      flag = !!this.eliminate(values, this.peers[s][s2], d2);
+  // Contradicion: square has no value
+  if(values[square].length === 0) return false;
+
+  // (1) If a square s is reduced to one value v, then eliminate v from the peers.
+  if(values[square].length === 1) {
+    v = values[square];
+
+    for(key in this.peers[square]) {
+      flag = !!this.eliminate(values, this.peers[square][key], v);
       if(!flag) return false;
     }
   }
 
   // (2) If a unit u is reduced to only one place for a value d, then put it there.
-  for(u in this.units[s]) {
-    dplaces = this.units[s][u].filter(function (el) {
-      return values[s].indexOf(el) === -1;
+  for(u in this.units[square]) {
+    dplaces = this.units[square][u].filter(function (el) {
+      return values[el].indexOf(remove) !== -1;
     }.bind(this));
 
     if(dplaces.length === 0) return false; // Contradiction: no place for this value
     else if(dplaces.length === 1) {
-      if(!this.assign(values, dplaces[0], d));
+      // remove can only be in one place in unit; assign it there
+      if(!this.assign(values, dplaces[0], remove)) return false;
     }
   }
 
   return values;
 };
 
+
+/**
+ * OLD VERSION - IS NOT COMPLETE - DOESN'T WORK
+ */
 Sudoku.prototype.solve = function (grid) {
   return this.search(this.parseGrid(grid));
 };
 
+/**
+ * Using depth-first search and propagation, try all possible values.
+ */
 Sudoku.prototype.search = function (values) {
   if(!values) return false;
 
+  var i;
+  var min = 10; // Use too high value
+  var d;
   var s;
-  var min;
-  var v;
+  var min_s;
+  var seq = [];
+
 
   var solved = Object.getOwnPropertyNames(values).every(function (el) {
-    return el.length == 1;
+    return el.length === 1;
   });
 
   if(solved) return values;
 
-  for(s in this.squares) {
-    v = this.squares[s];
-    if(values[v] > 1) {
-      min = Math.min(values[v].length, min);
+  // Chose the unfilled square s with the fewest possibilities
+  for(i in this.squares) {
+    s = this.squares[i];
+    if(values[s].length > 1) {
+      min = Math.min(values[s].length, min);
+      min_s = s;
     }
   }
 
+  for(i in values[min_s]) {
+    d = values[min_s][i];
+    seq.push(this.search(this.assign(JSON.parse(JSON.stringify(values)), min_s, d)));
+  }
 
-/*
-    ## Chose the unfilled square s with the fewest possibilities
-    n,s = min((len(values[s]), s) for s in squares if len(values[s]) > 1)
-
-    return some(search(assign(values.copy(), s, d))
-    for d in values[s])
-*/
-  // TO DO
-  return false;
+  return this.some(seq);
 };
 
+/**
+ * Return some element of seq that is true.
+ */
 Sudoku.prototype.some = function (seq) {
   for(var ch in seq) {
     if(seq[ch]) return seq[ch];
   }
   return false;
 };
+
 
 Sudoku.prototype.html = function () {
   return "<h2>Output</h2>";
@@ -268,4 +310,4 @@ Sudoku.prototype.html = function () {
 //module.exports = Sudoku;
 
 var s = new Sudoku();
-console.log(s.parseGrid("4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......"));
+console.log(s.solve("4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......"));
