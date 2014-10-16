@@ -9,6 +9,10 @@
   "scripts": {
     "test": "jasmine-node tests/sudoku_test.spec.js"
   },
-  "author": "Roman Zaynetdinov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zaynetro/sudokujs.git"
+  },
+  "author": "Roman Zaynetdinov <romanznet@gmail.com>",
   "license": "MIT"
 }

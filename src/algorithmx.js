@@ -14,24 +14,13 @@
 
 /*
 var X = [1, 2, 3, 4, 5, 6, 7];
-
-var Y = new Map();
-
-Y.set('A', [1, 4 ,7]);
-Y.set('B', [1, 4]);
-Y.set('C', [4, 5, 7]);
-Y.set('D', [3, 5, 6]);
-Y.set('E', [2, 3, 6, 7]);
-Y.set('F', [2, 7]);
-
-var { X, Y } = exact_cover(X, Y);
-
 */
 
 /**
  * Transform X into dictionary representation
  * Example:
  *
+ * (Y is a MAP)
  * Y = {
  *   'A': [1, 4, 7],
  *   'B': [1, 4],
@@ -80,7 +69,7 @@ function* solve(X, Y, solution = []) {
   else {
     // Find column with the minimum length of the value
     let c = 0;
-    let min = X.size;
+    let min = X.size + 1;
     for(let [k, v] of X) {
       if(v.length < min) {
         min = v.length
@@ -191,6 +180,10 @@ function* solve_sudoku(size, grid) {
 
   let { X, Y } = exact_cover(X, Y);
 
+  console.log(X);
+
+  yield true;
+
   for(let [i, row] of grid.entries()) {
     for(let [j, n] of row.entries()) {
       if(n) select(X, Y, [i, j, n]);
@@ -207,6 +200,7 @@ function* solve_sudoku(size, grid) {
   yield false;
 }
 
+
 var grid = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
     [6, 0, 0, 1, 9, 5, 0, 0, 0],
@@ -219,3 +213,30 @@ var grid = [
     [0, 0, 0, 0, 8, 0, 0, 7, 9]];
 
 console.log(solve_sudoku([3, 3], grid).next().value);
+
+
+/* First test
+
+let X = [1,2,3];
+let Y = new Map();
+Y.set('A', [1]);
+Y.set('B', [1,2]);
+Y.set('C', [2,3]);
+
+/* Second test
+
+let X = [1,2,3,4,5,6,7];
+let Y = new Map();
+Y.set('A', [1,4,7]);
+Y.set('B', [1,4]);
+Y.set('C', [4,5,7]);
+Y.set('D', [3,5,6]);
+Y.set('E', [2,3,6,7]);
+Y.set('F', [2,7]);
+
+let { X, Y } = exact_cover(X, Y);
+
+console.log(solve(X, Y, []).next().value);
+
+*/
+
