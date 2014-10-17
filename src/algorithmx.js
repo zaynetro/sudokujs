@@ -20,8 +20,9 @@ var X = [1, 2, 3, 4, 5, 6, 7];
  * Transform X into dictionary representation
  * Example:
  *
- * (Y is a MAP)
- * Y = {
+ * X = [1, 2, 3, 4, 5, 6, 7]
+ *
+ * Y = Map {
  *   'A': [1, 4, 7],
  *   'B': [1, 4],
  *   'C': [4, 5, 7],
@@ -32,7 +33,7 @@ var X = [1, 2, 3, 4, 5, 6, 7];
  *
  * Then
  *
- * X = {
+ * X = Map {
  *   1: ['A', 'B'],
  *   2: ['E', 'F'],
  *   3: ['D', 'E'],
@@ -44,19 +45,11 @@ var X = [1, 2, 3, 4, 5, 6, 7];
  *
  */
 function exact_cover(old_X, Y) {
-  let X = new Map();
-
-  for(let i of old_X) {
-    X.set(i, []);
-  }
+  let X = wrap(old_X);
 
   for(let [i, row] of Y) {
     for(let j of row) {
-      if(X.has(j)) {
-        let arr = X.get(j);
-        arr.push(i);
-        X.set(j, arr);
-      }
+      X.get(j).push(i);
     }
   }
 
@@ -65,12 +58,12 @@ function exact_cover(old_X, Y) {
 
 function* solve(X, Y, solution = []) {
   // If matrix is empty terminate
-  if(!X || !X.size) yield solution;
+  if(!X || !X.size()) yield solution;
   else {
     // Find column with the minimum length of the value
     let c = 0;
-    let min = X.size + 1;
-    for(let [k, v] of X) {
+    let min = X.size() + 1;
+    for(let [k, v] of X.entries()) {
       if(v.length < min) {
         min = v.length
         c = k;
@@ -107,7 +100,7 @@ function select(X, Y, r) {
     // Add letters and remove them from X
     let el = X.get(j);
     cols.push(el);
-    X.delete(j);
+    X.remove(j);
   }
 
   return cols;
@@ -161,28 +154,30 @@ function* solve_sudoku(size, grid) {
   const [rows, cols] = size;
   const N = rows * cols;
 
-  X = X.concat([for(rc of product(range(N), range(N))) { rc }]);
-  X = X.concat([for(rn of product(range(N), range(1, N + 1))) { rn }]);
-  X = X.concat([for(cn of product(range(N), range(1, N + 1))) { cn }]);
-  X = X.concat([for(bn of product(range(N), range(1, N + 1))) { bn }]);
+  X = X.concat([for(rc of product(range(N), range(N))) ['rc', rc]]);
+  X = X.concat([for(rn of product(range(N), range(1, N + 1))) ['rn', rn]]);
+  X = X.concat([for(cn of product(range(N), range(1, N + 1))) ['cn', cn]]);
+  X = X.concat([for(bn of product(range(N), range(1, N + 1))) ['bn', bn]]);
 
   let Y = new Map();
 
   for(let [r, c, n] of product(range(N), range(N), range(1, N + 1))) {
     let b = Math.ceil(r / rows) * rows + Math.ceil(c / cols); // Box number
     Y.set([r, c, n], [
-      { rc : [r, c] },
-      { rn : [r, n] },
-      { cn : [c, n] },
-      { bn : [b, n] }
+      ['rc', [r, c]],
+      ['rn', [r, n]],
+      ['cn', [c, n]],
+      ['bn', [b, n]]
     ]);
   }
 
+  //console.log(Y);
+  //yield true;
+
   let { X, Y } = exact_cover(X, Y);
 
-  console.log(X);
-
-  yield true;
+  //console.log(X);
+  //yield true;
 
   for(let [i, row] of grid.entries()) {
     for(let [j, n] of row.entries()) {
@@ -200,7 +195,91 @@ function* solve_sudoku(size, grid) {
   yield false;
 }
 
+/**
+ * Wrapper of Map object to make array indices work
+ * @param  {Array} input Array of indices
+ *
+ * Creates two maps:
+ *   data = Map { unique index : [] }
+ *   links = Map {
+ *     input index to String : {
+ *       data : data index
+ *       origin : input original index
+ *     }
+ *   }
+ *
+ *  Returns following functions:
+ *
+ *    - get [the same as Map.get()]
+ *    - set [Map.set()]
+ *    - remove [Map.delete()]
+ *    - size [Map.size] Function!!
+ *    - entries [Map.entries()]
+ *
+ */
+var wrap = function (input) {
 
+  var links = new Map();
+  var data = new Map();
+  var last_i = data.size;
+
+  for(let i of input) {
+    add(i, [])
+  }
+
+  function add(k, v) {
+    data.set(last_i, v);
+    links.set(k.toString(), {
+      data : last_i,
+      origin : k
+    });
+    last_i++;
+  }
+
+  return {
+
+    get : function (k) {
+      let ktoS = k.toString();
+      if(!links.has(ktoS)) return null;
+      return data.get(links.get(ktoS).data) || null;
+    },
+
+    set : function (k, v) {
+      let ktoS = k.toString();
+      if(!links.has(ktoS)) {
+        add(k,v);
+      } else {
+        data.set(links.get(ktoS).data, v);
+      }
+    },
+
+    remove : function (k) {
+      let ktoS = k.toString();
+      let link = links.get(ktoS);
+      if(!link) return;
+      data.delete(link.data);
+      links.delete(ktoS);
+    },
+
+    size : function () {
+      return data.size;
+    },
+
+    entries : function* () {
+      for(let link of links.values()) {
+        yield [link.origin, data.get(link.data)];
+      }
+    },
+
+    // REMOVE
+    getData : function () { return data; },
+    getLinks : function () { return links; }
+
+  };
+
+};
+
+/*
 var grid = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
     [6, 0, 0, 1, 9, 5, 0, 0, 0],
@@ -214,6 +293,8 @@ var grid = [
 
 console.log(solve_sudoku([3, 3], grid).next().value);
 
+*/
+
 
 /* First test
 
@@ -222,6 +303,14 @@ let Y = new Map();
 Y.set('A', [1]);
 Y.set('B', [1,2]);
 Y.set('C', [2,3]);
+
+/* Easy try
+
+let X = [1, 2];
+let Y = new Map();
+Y.set('A', [1, 2]);
+Y.set('B', [1]);
+
 
 /* Second test
 
@@ -233,6 +322,7 @@ Y.set('C', [4,5,7]);
 Y.set('D', [3,5,6]);
 Y.set('E', [2,3,6,7]);
 Y.set('F', [2,7]);
+
 
 let { X, Y } = exact_cover(X, Y);
 

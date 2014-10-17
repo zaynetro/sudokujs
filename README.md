@@ -12,6 +12,21 @@ The main goal is to learn some new algorythms and to play with new ES6 features.
 - [ ] Test sudoku generating methods
 - [ ] Test browser support with es6 to es5 compiler
 
+## Problems
+
+1. **Map.has()**
+
+Use arrays as keys
+```javascript
+var m = new Map();
+m.set([1,2], 'hello');
+m.has([1,2]) === false;
+
+var arr = [2,3];
+m.set(arr, 'world');
+m.has(arr) === true;
+```
+
 
 ## Materials used
 
