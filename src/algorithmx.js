@@ -49,6 +49,8 @@ function exact_cover(old_X, Y) {
 
   for(let [i, row] of Y) {
     for(let j of row) {
+      let tmp = X.get(j);
+      if(!tmp || typeof tmp == 'undefined') debugger;
       X.get(j).push(i);
     }
   }
@@ -92,8 +94,11 @@ function select(X, Y, r) {
         // k is a column(number)
         if(k != j) {
           // Remove column(k) from X's row(i)
-          let index = X.get(k).indexOf(i);
-          if(index > -1) X.get(k).splice(index, 1);
+          let val = X.get(k);
+          if(val) {
+            let index = val.indexOf(i);
+            if(index > -1) val.splice(index, 1);
+          }
         }
       }
     }
@@ -162,7 +167,7 @@ function* solve_sudoku(size, grid) {
   let Y = new Map();
 
   for(let [r, c, n] of product(range(N), range(N), range(1, N + 1))) {
-    let b = Math.ceil(r / rows) * rows + Math.ceil(c / cols); // Box number
+    let b = Math.floor(r / rows) * rows + Math.floor(c / cols); // Box number
     Y.set([r, c, n], [
       ['rc', [r, c]],
       ['rn', [r, n]],
@@ -176,8 +181,8 @@ function* solve_sudoku(size, grid) {
 
   let { X, Y } = exact_cover(X, Y);
 
-  //console.log(X);
-  //yield true;
+  /*console.log(X.size());
+  yield true;*/
 
   for(let [i, row] of grid.entries()) {
     for(let [j, n] of row.entries()) {
@@ -256,9 +261,8 @@ var wrap = function (input) {
     remove : function (k) {
       let ktoS = k.toString();
       let link = links.get(ktoS);
-      if(!link) return;
-      data.delete(link.data);
-      links.delete(ktoS);
+      if(!link) return false;
+      return data.delete(link.data) && links.delete(ktoS);
     },
 
     size : function () {
@@ -279,8 +283,8 @@ var wrap = function (input) {
 
 };
 
-/*
-var grid = [
+let size = [3, 3];
+let grid = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
     [6, 0, 0, 1, 9, 5, 0, 0, 0],
     [0, 9, 8, 0, 0, 0, 0, 6, 0],
@@ -292,6 +296,38 @@ var grid = [
     [0, 0, 0, 0, 8, 0, 0, 7, 9]];
 
 console.log(solve_sudoku([3, 3], grid).next().value);
+
+/*
+
+let X = [];
+
+const [rows, cols] = size;
+const N = rows * cols;
+
+X = X.concat([for(rc of product(range(N), range(N))) ['rc', rc]]);
+X = X.concat([for(rn of product(range(N), range(1, N + 1))) ['rn', rn]]);
+X = X.concat([for(cn of product(range(N), range(1, N + 1))) ['cn', cn]]);
+X = X.concat([for(bn of product(range(N), range(1, N + 1))) ['bn', bn]]);
+
+let Y = new Map();
+
+for(let [r, c, n] of product(range(N), range(N), range(1, N + 1))) {
+  let b = Math.floor(r / rows) * rows + Math.floor(c / cols); // Box number
+  Y.set([r, c, n], [
+    ['rc', [r, c]],
+    ['rn', [r, n]],
+    ['cn', [c, n]],
+    ['bn', [b, n]]
+  ]);
+}
+
+//console.log(Y);
+//yield true;
+
+let { X, Y } = exact_cover(X, Y);
+
+
+console.log(X);
 
 */
 
