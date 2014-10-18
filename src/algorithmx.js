@@ -70,10 +70,6 @@ function* solve(X, Y, solution = []) {
       }
     }
 
-    let size_X = X.size();
-    let el_X = X.get(c);
-    if(min === 0) debugger;
-
     for(let r of X.get(c)) {
       solution.push(r);
       let cols = select(X, Y, r);
@@ -322,7 +318,7 @@ let grid = fromString(size, str);
 /*console.log(grid);
 debugger;*/
 
-/*grid =  [
+grid = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
     [6, 0, 0, 1, 9, 5, 0, 0, 0],
     [0, 9, 8, 0, 0, 0, 0, 6, 0],
@@ -331,10 +327,9 @@ debugger;*/
     [7, 0, 0, 0, 2, 0, 0, 0, 6],
     [0, 6, 0, 0, 0, 0, 2, 8, 0],
     [0, 0, 0, 4, 1, 9, 0, 0, 5],
-    [0, 0, 0, 0, 8, 0, 0, 7, 9]];*/
+    [0, 0, 0, 0, 8, 0, 0, 7, 9]];
 
 let solution = solve_sudoku(size, grid).next().value;
-
 console.log(solution);
 
 for(let el of solution) {
