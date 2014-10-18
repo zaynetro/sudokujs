@@ -5,28 +5,31 @@ The main goal is to learn some new algorythms and to play with new ES6 features.
 ## Progress
 
 - [x] Implement Algorithm X methods
-- [ ] Test methods with different problems
+- [x] Test methods with different problems
 - [x] Implement sudoku solving methods
 - [ ] Test sudoku solving methods
 - [ ] Implement sudoku generating methods
 - [ ] Test sudoku generating methods
 - [ ] Test browser support with es6 to es5 compiler
+- [ ] Write comparison functions instead of comparing as strings
+- [ ] Add number of iterations counter to prevent infinite loops
 
 ## Problems
 
 1. **Map.has()**
 
-Use arrays as keys
-```javascript
-var m = new Map();
-m.set([1,2], 'hello');
-m.has([1,2]) === false;
+  Use arrays as keys
+  ```javascript
+  var m = new Map();
+  m.set([1,2], 'hello');
+  m.has([1,2]) === false;
 
-var arr = [2,3];
-m.set(arr, 'world');
-m.has(arr) === true;
-```
+  var arr = [2,3];
+  m.set(arr, 'world');
+  m.has(arr) === true;
+  ```
 
+2. **Doesn't solve all sudoku**
 
 ## Materials used
 

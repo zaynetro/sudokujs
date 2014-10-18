@@ -47,10 +47,8 @@ var X = [1, 2, 3, 4, 5, 6, 7];
 function exact_cover(old_X, Y) {
   let X = wrap(old_X);
 
-  for(let [i, row] of Y) {
+  for(let [i, row] of Y.entries()) {
     for(let j of row) {
-      let tmp = X.get(j);
-      if(!tmp || typeof tmp == 'undefined') debugger;
       X.get(j).push(i);
     }
   }
@@ -72,6 +70,10 @@ function* solve(X, Y, solution = []) {
       }
     }
 
+    let size_X = X.size();
+    let el_X = X.get(c);
+    if(min === 0) debugger;
+
     for(let r of X.get(c)) {
       solution.push(r);
       let cols = select(X, Y, r);
@@ -85,26 +87,24 @@ function* solve(X, Y, solution = []) {
 function select(X, Y, r) {
   var cols = [];
 
-  if(!Y.has(r)) return cols;
   for(let j of Y.get(r)) {
     // j is a column(number)
+    let tmp = X.get(j);
     for(let i of X.get(j)) {
       // i is a row(letter)
       for(let k of Y.get(i)) {
         // k is a column(number)
-        if(k != j) {
+        // Compare array as strings
+        if(k.toString() != j.toString()) {
           // Remove column(k) from X's row(i)
           let val = X.get(k);
-          if(val) {
-            let index = val.indexOf(i);
-            if(index > -1) val.splice(index, 1);
-          }
+          let index = val.indexOf(i);
+          if(index > -1) val.splice(index, 1);
         }
       }
     }
     // Add letters and remove them from X
-    let el = X.get(j);
-    cols.push(el);
+    cols.push(X.get(j));
     X.remove(j);
   }
 
@@ -153,6 +153,7 @@ function range(start, end) {
 
 
 function* solve_sudoku(size, grid) {
+  let duration = new Date();
 
   let X = [];
 
@@ -165,6 +166,7 @@ function* solve_sudoku(size, grid) {
   X = X.concat([for(bn of product(range(N), range(1, N + 1))) ['bn', bn]]);
 
   let Y = new Map();
+  Y = wrap(Y);
 
   for(let [r, c, n] of product(range(N), range(N), range(1, N + 1))) {
     let b = Math.floor(r / rows) * rows + Math.floor(c / cols); // Box number
@@ -176,13 +178,7 @@ function* solve_sudoku(size, grid) {
     ]);
   }
 
-  //console.log(Y);
-  //yield true;
-
   let { X, Y } = exact_cover(X, Y);
-
-  /*console.log(X.size());
-  yield true;*/
 
   for(let [i, row] of grid.entries()) {
     for(let [j, n] of row.entries()) {
@@ -192,12 +188,14 @@ function* solve_sudoku(size, grid) {
 
   for(let solution of solve(X, Y, [])) {
     for(let [r, c, n] of solution) {
-      grid[r,c] = n;
+      grid[r][c] = n;
     }
+    let now = new Date();
+    console.log('Time spent: ' + (now - duration) + 'ms');
     yield grid;
   }
 
-  yield false;
+  yield null;
 }
 
 /**
@@ -283,8 +281,48 @@ var wrap = function (input) {
 
 };
 
+/**
+ * Convert a grid to the object with squares as keys and chars as values
+ */
+function fromString (size, str) {
+  var grid = [];
+  const N = size[0] * size[1];
+  let i = 0;
+  let j = 0;
+
+  for(let ch of str) {
+    if(/[0-9]/.test(ch)) {
+      if(!grid[i]) grid[i] = [];
+      grid[i].push(ch === '.' ? 0 : +ch);
+      j++;
+      if(j >= N) {
+        j = 0;
+        i++;
+      }
+    }
+  }
+
+  return grid;
+};
+
 let size = [3, 3];
-let grid = [
+
+let str = '400000805' +
+          '030000000' +
+          '000700000' +
+          '020000060' +
+          '000080400' +
+          '000010000' +
+          '000603070' +
+          '500200000' +
+          '104000000';
+
+let grid = fromString(size, str);
+
+/*console.log(grid);
+debugger;*/
+
+/*grid =  [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
     [6, 0, 0, 1, 9, 5, 0, 0, 0],
     [0, 9, 8, 0, 0, 0, 0, 6, 0],
@@ -293,76 +331,12 @@ let grid = [
     [7, 0, 0, 0, 2, 0, 0, 0, 6],
     [0, 6, 0, 0, 0, 0, 2, 8, 0],
     [0, 0, 0, 4, 1, 9, 0, 0, 5],
-    [0, 0, 0, 0, 8, 0, 0, 7, 9]];
+    [0, 0, 0, 0, 8, 0, 0, 7, 9]];*/
 
-console.log(solve_sudoku([3, 3], grid).next().value);
+let solution = solve_sudoku(size, grid).next().value;
 
-/*
+console.log(solution);
 
-let X = [];
-
-const [rows, cols] = size;
-const N = rows * cols;
-
-X = X.concat([for(rc of product(range(N), range(N))) ['rc', rc]]);
-X = X.concat([for(rn of product(range(N), range(1, N + 1))) ['rn', rn]]);
-X = X.concat([for(cn of product(range(N), range(1, N + 1))) ['cn', cn]]);
-X = X.concat([for(bn of product(range(N), range(1, N + 1))) ['bn', bn]]);
-
-let Y = new Map();
-
-for(let [r, c, n] of product(range(N), range(N), range(1, N + 1))) {
-  let b = Math.floor(r / rows) * rows + Math.floor(c / cols); // Box number
-  Y.set([r, c, n], [
-    ['rc', [r, c]],
-    ['rn', [r, n]],
-    ['cn', [c, n]],
-    ['bn', [b, n]]
-  ]);
+for(let el of solution) {
+  console.log(el.toString());
 }
-
-//console.log(Y);
-//yield true;
-
-let { X, Y } = exact_cover(X, Y);
-
-
-console.log(X);
-
-*/
-
-
-/* First test
-
-let X = [1,2,3];
-let Y = new Map();
-Y.set('A', [1]);
-Y.set('B', [1,2]);
-Y.set('C', [2,3]);
-
-/* Easy try
-
-let X = [1, 2];
-let Y = new Map();
-Y.set('A', [1, 2]);
-Y.set('B', [1]);
-
-
-/* Second test
-
-let X = [1,2,3,4,5,6,7];
-let Y = new Map();
-Y.set('A', [1,4,7]);
-Y.set('B', [1,4]);
-Y.set('C', [4,5,7]);
-Y.set('D', [3,5,6]);
-Y.set('E', [2,3,6,7]);
-Y.set('F', [2,7]);
-
-
-let { X, Y } = exact_cover(X, Y);
-
-console.log(solve(X, Y, []).next().value);
-
-*/
-

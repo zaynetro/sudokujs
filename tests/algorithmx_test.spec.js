@@ -42,14 +42,38 @@ describe('algorithmx', function () {
     });
 
     it('Solve', function () {
-      let X = [1,2,3];
+      let X = [1, 2, 3];
       let Y = new Map();
       Y.set('A', [1]);
-      Y.set('B', [1,2]);
-      Y.set('C', [2,3]);
+      Y.set('B', [1, 2]);
+      Y.set('C', [2, 3]);
       let { X, Y } = exact_cover(X, Y);
       expect(solve(X, Y, []).next().value).toEqual(['A', 'C']);
     });
+
+    /* Easy try
+
+    let X = [1, 2];
+    let Y = new Map();
+    Y.set('A', [1, 2]);
+    Y.set('B', [1]);
+
+
+    /* Second test
+
+    let X = [1,2,3,4,5,6,7];
+    let Y = new Map();
+    Y.set('A', [1,4,7]);
+    Y.set('B', [1,4]);
+    Y.set('C', [4,5,7]);
+    Y.set('D', [3,5,6]);
+    Y.set('E', [2,3,6,7]);
+    Y.set('F', [2,7]);
+
+    let { X, Y } = exact_cover(X, Y);
+
+    */
+
   });
 
 });
