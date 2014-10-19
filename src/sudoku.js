@@ -7,6 +7,14 @@ function cross(A, B) {
   return [for(a of A) for(b of B) a+b];
 }
 
+function copyMap(old) {
+  var map = new Map();
+  for(let [k, v] of old) {
+    map.set(k, v);
+  }
+  return map;
+}
+
 var Sudoku = function () {
 
   this.digits = '123456789';
@@ -53,18 +61,20 @@ Sudoku.prototype.fromString = function (str) {
 };
 
 Sudoku.prototype.parseGrid = function (grid) {
+  let start = new Date();
   let values = new Map();
 
   // To start, every square can be any digit; then assign values from the grid.
   for(let s of this.squares) {
     values.set(s, this.digits);
-    console.log(values.get(s));
   }
 
   for(let [s, d] of this.fromString(grid)) {
     if(this.digits.indexOf(d) > -1 && !this.assign(values, s, d)) return false;
   }
 
+  let now = new Date();
+  console.log('Time spent: ' + (now - start) + 'ms');
   return values;
 };
 
@@ -74,18 +84,13 @@ Sudoku.prototype.assign = function (values, s, d) {
 
   for(let d2 of other_values) {
     flag = !!this.eliminate(values, s, d2);
-    if(!flag) {
-      console.log(values);
-      return false;
-    }
+    if(!flag) return false;
   }
 
   return values;
 };
 
 Sudoku.prototype.eliminate = function (values, s, d) {
-  console.log('ELIMINATE FUNCTION');
-  //debugger;
   let tmp = values.get(s);
   if(values.get(s).indexOf(d) === -1) return values; // Already eliminated
   values.set(s, values.get(s).replace(d, ''));
@@ -95,7 +100,7 @@ Sudoku.prototype.eliminate = function (values, s, d) {
     let d2 = values.get(s);
     let flag = true;
 
-    for(let s2 of this.peers.keys()) {
+    for(let s2 of this.peers.get(s)) {
       flag = !!this.eliminate(values, s2, d2);
       if(!flag) return false;
     }
@@ -113,6 +118,51 @@ Sudoku.prototype.eliminate = function (values, s, d) {
   return values;
 };
 
+Sudoku.prototype.solve = function (grid) {
+  return this.search(this.parseGrid(grid));
+};
+
+Sudoku.prototype.search = function (values) {
+  if(!values) return false;
+  let flag = true;
+  for(let s of this.squares) {
+    flag = values.get(s).length == 1;
+    if(!flag) break;
+  }
+  if(flag) return values; // Solved
+  // Chose the unfilled square s with the fewest possibilities
+  let min = 10;
+  let s;
+  for(let s2 of this.squares) {
+    if(values.get(s2).length < min) {
+      min = values.get(s2).length;
+      s = s2;
+    }
+  }
+
+  return this.some([for(d of values.get(s)) this.search(this.assign(copyMap(values), s, d))]);
+};
+
+Sudoku.prototype.some = function (seq) {
+  for(let el of seq) if(el) return el;
+  return false;
+};
+
+
+Sudoku.prototype.display = function (values) {
+  const W = 9;
+  let i = 0;
+  let row = '';
+  for(let [s, d] of values) {
+    row += d;
+    i++;
+    if(i > W) {
+      console.log(row);
+      i = 0;
+      row = '';
+    }
+  }
+};
 
 let s = new Sudoku();
-console.log(s.parseGrid("4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......"));
+s.display(s.solve('4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......'));
